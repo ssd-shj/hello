@@ -60,7 +60,7 @@ pipeline {
                       cp runtime_output.txt runtime_output_${NAME}_${BUILD_NUMBER}.txt
                       git add runtime_output_${NAME}_${BUILD_NUMBER}.txt
                       git commit -m "Add runtime output for NAME=${NAME}, build ${BUILD_NUMBER}"
-                      git push https://$GIT_TOKEN@github.com/ssd-/hello.git $BRANCH_NAME
+                      git push https://$GIT_TOKEN@github.com/ssd-shj/hello.git $BRANCH_NAME
                     '''
                 }
             }
