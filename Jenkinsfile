@@ -6,9 +6,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = "shashankjf/hello-app"
-        DOCKER_USER = credentials('dockerhub-creds')
-        GIT_USER = credentials('github-creds')
+        IMAGE_NAME = "your-dockerhub-username/hello-app"
     }
 
     stages {
@@ -22,9 +20,11 @@ pipeline {
 
         stage('Login to DockerHub') {
             steps {
-                sh '''
-                  echo $DOCKER_USER_PSW | docker login -u $DOCKER_USER_USR --password-stdin
-                '''
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds',
+                                                 usernameVariable: 'DOCKER_USER',
+                                                 passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                }
             }
         }
 
@@ -44,17 +44,25 @@ pipeline {
             }
         }
 
+        stage('Publish Artifact') {
+            steps {
+                archiveArtifacts artifacts: 'runtime_output.txt', fingerprint: true
+            }
+        }
+
         stage('Commit Output to GitHub') {
             steps {
-                sh '''
-                  git config user.email "ci-bot@example.com"
-                  git config user.name "Jenkins CI Bot"
-                  git checkout $BRANCH_NAME
-                  cp runtime_output.txt runtime_output_${NAME}_${BUILD_NUMBER}.txt
-                  git add runtime_output_${NAME}_${BUILD_NUMBER}.txt
-                  git commit -m "Add runtime output for NAME=${NAME}, build ${BUILD_NUMBER}"
-                  git push https://${GIT_USER_USR}:${GIT_USER_PSW}@github.com/your-username/hello.git HEAD:$BRANCH_NAME
-                '''
+                withCredentials([string(credentialsId: 'github-api-token', variable: 'GIT_TOKEN')]) {
+                    sh '''
+                      git config user.email "ci-bot@example.com"
+                      git config user.name "Jenkins CI Bot"
+                      git checkout $BRANCH_NAME
+                      cp runtime_output.txt runtime_output_${NAME}_${BUILD_NUMBER}.txt
+                      git add runtime_output_${NAME}_${BUILD_NUMBER}.txt
+                      git commit -m "Add runtime output for NAME=${NAME}, build ${BUILD_NUMBER}"
+                      git push https://$GIT_TOKEN@github.com/ssd-/hello.git $BRANCH_NAME
+                    '''
+                }
             }
         }
     }
